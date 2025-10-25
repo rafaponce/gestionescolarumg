@@ -1,0 +1,43 @@
+name: CI/CD - Gestión Escolar UMG
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Descargar código del repositorio
+      uses: actions/checkout@v3
+
+    - name: Verificar sintaxis PHP
+      run: |
+        echo "Iniciando validación de sintaxis PHP..."
+        find . -type f -name "*.php" -exec php -l {} \;
+
+    - name: Escaneo básico de vulnerabilidades
+      run: |
+        echo "Verificando archivos potencialmente inseguros..."
+        grep -R --include="*.php" -E "(base64_decode|eval|shell_exec|system|exec|passthru)" . || echo "No se detectaron patrones inseguros."
+
+    - name: Simulación de construcción (Build)
+      run: |
+        echo "Aplicación PHP sin dependencias externas. No se requiere build."
+
+    - name: Despliegue al hosting por FTP
+      uses: SamKirkland/FTP-Deploy-Action@v4.3.4
+      with:
+        server: gestionescolarumg.holasql.com
+        username: ${{ secrets.FTP_USER }}
+        password: ${{ secrets.FTP_PASS }}
+        protocol: ftp
+        port: 21
+        local-dir: ./
+        server-dir: /
+        exclude: |
+          .git*
+          .github/
+          README.md
